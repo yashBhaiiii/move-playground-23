@@ -35,13 +35,13 @@ const nodeCategories = [
   { 
     type: 'party', 
     label: 'Party', 
-    color: 'bg-violet-300',
+    color: 'bg-rose-300',
     items: ['Role'] 
   },
   { 
     type: 'token', 
     label: 'Token', 
-    color: 'bg-orange-500',
+    color: 'bg-red-500',
     items: ['Currency', 'Token ID'] 
   },
   { 

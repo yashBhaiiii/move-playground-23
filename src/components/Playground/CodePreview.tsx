@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
@@ -45,6 +46,9 @@ const CodePreview = ({ code, generateCode }: { code: string, generateCode: () =>
     <div className="h-full bg-white/80 backdrop-blur-sm border-l border-gray-200 flex flex-col">
       <div className="p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-700">Generated Move Code</h2>
+        <p className="text-xs text-gray-500 mt-1">
+          Supports one-to-many and many-to-one relationships
+        </p>
       </div>
       <div className="flex-1 overflow-auto p-4">
         <CodeMirror

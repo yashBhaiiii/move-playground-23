@@ -87,11 +87,78 @@ const Playground = () => {
     [reactFlowInstance, setNodes],
   );
 
+  // Helper function to identify relationship types
+  const identifyRelationships = useCallback(() => {
+    const relationships = {
+      oneToMany: [],
+      manyToOne: []
+    };
+
+    // Create a map of target nodes and their source connections
+    const targetToSources = {};
+    // Create a map of source nodes and their target connections
+    const sourceToTargets = {};
+
+    edges.forEach(edge => {
+      if (!targetToSources[edge.target]) {
+        targetToSources[edge.target] = [];
+      }
+      targetToSources[edge.target].push(edge.source);
+
+      if (!sourceToTargets[edge.source]) {
+        sourceToTargets[edge.source] = [];
+      }
+      sourceToTargets[edge.source].push(edge.target);
+    });
+
+    // Find many-to-one relationships: multiple sources connecting to one target
+    Object.keys(targetToSources).forEach(targetId => {
+      if (targetToSources[targetId].length > 1) {
+        const targetNode = nodes.find(n => n.id === targetId);
+        const sourceNodes = targetToSources[targetId].map(sourceId => 
+          nodes.find(n => n.id === sourceId)
+        ).filter(Boolean);
+        
+        if (targetNode && sourceNodes.length > 1) {
+          relationships.manyToOne.push({
+            target: targetNode,
+            sources: sourceNodes
+          });
+        }
+      }
+    });
+
+    // Find one-to-many relationships: one source connecting to multiple targets
+    Object.keys(sourceToTargets).forEach(sourceId => {
+      if (sourceToTargets[sourceId].length > 1) {
+        const sourceNode = nodes.find(n => n.id === sourceId);
+        const targetNodes = sourceToTargets[sourceId].map(targetId => 
+          nodes.find(n => n.id === targetId)
+        ).filter(Boolean);
+        
+        if (sourceNode && targetNodes.length > 1) {
+          relationships.oneToMany.push({
+            source: sourceNode,
+            targets: targetNodes
+          });
+        }
+      }
+    });
+
+    return relationships;
+  }, [nodes, edges]);
+
   const generateCode = useCallback(() => {
     // Initialize code structure
     let code = 'module SmartContract {\n';
     code += '    use std::signer;\n';
-    code += '    use aptos_framework::coin;\n\n';
+    code += '    use std::vector;\n';
+    code += '    use aptos_framework::coin;\n';
+    code += '    use aptos_framework::account;\n\n';
+
+    // Identify relationships for more complex code generation
+    const relationships = identifyRelationships();
+    console.log('Identified relationships:', relationships);
 
     // Generate struct definitions based on the nodes
     const structNodes = nodes.filter(node => node.type === 'value' || node.type === 'bound');
@@ -103,7 +170,40 @@ const Playground = () => {
       });
     }
 
-    // Generate functions based on action nodes
+    // Generate relationship structs
+    if (relationships.oneToMany.length > 0) {
+      relationships.oneToMany.forEach((rel, idx) => {
+        const sourceName = rel.source.data.label.replace(/\s+/g, '');
+        code += `    // One-to-many relationship for ${sourceName}\n`;
+        code += `    struct ${sourceName}Collection {\n`;
+        code += '        owner: address,\n';
+        code += '        items: vector<u64>\n';
+        code += '    }\n\n';
+      });
+    }
+
+    // Generate resource account struct if we have many-to-one relationships
+    if (relationships.manyToOne.length > 0) {
+      code += '    // Resource account for many-to-one relationships\n';
+      code += '    struct ResourceAccount {\n';
+      code += '        signer_cap: account::SignerCapability\n';
+      code += '    }\n\n';
+    }
+
+    // Generate token structures if token nodes exist
+    const tokenNodes = nodes.filter(node => node.type === 'token');
+    if (tokenNodes.length > 0) {
+      code += '    // Token definitions\n';
+      code += '    struct CoinType {}\n\n';
+      
+      code += '    // Token capabilities\n';
+      code += '    struct TokenCapabilities {\n';
+      code += '        mint_cap: coin::MintCapability<CoinType>,\n';
+      code += '        burn_cap: coin::BurnCapability<CoinType>\n';
+      code += '    }\n\n';
+    }
+
+    // Generate action functions
     const actionNodes = nodes.filter(node => node.type === 'action');
     actionNodes.forEach(node => {
       const connectedEdges = edges.filter(edge => edge.source === node.id || edge.target === node.id);
@@ -120,7 +220,8 @@ const Playground = () => {
           code += '        account: &signer,\n';
           code += '        amount: u64\n';
           code += '    ) {\n';
-          code += '        // Deposit implementation\n';
+          code += '        // Check if account has enough balance\n';
+          code += '        // Handle deposit logic\n';
           code += '    }\n\n';
           break;
         case 'Withdraw':
@@ -128,7 +229,8 @@ const Playground = () => {
           code += '        account: &signer,\n';
           code += '        amount: u64\n';
           code += '    ) {\n';
-          code += '        // Withdraw implementation\n';
+          code += '        // Verify account has enough deposited\n';
+          code += '        // Handle withdrawal logic\n';
           code += '    }\n\n';
           break;
         case 'Transfer':
@@ -137,27 +239,99 @@ const Playground = () => {
           code += '        to: address,\n';
           code += '        amount: u64\n';
           code += '    ) {\n';
-          code += '        // Transfer implementation\n';
+          code += '        // Verify sender authorization\n';
+          code += '        // Handle transfer logic\n';
+          code += '    }\n\n';
+          break;
+        case 'Choice':
+          code += '    public entry fun make_choice(\n';
+          code += '        account: &signer,\n';
+          code += '        choice_id: u64,\n';
+          code += '        choice_value: u64\n';
+          code += '    ) {\n';
+          code += '        // Record the choice made by the account\n';
+          code += '    }\n\n';
+          break;
+        case 'Notification':
+          code += '    public entry fun notify(\n';
+          code += '        account: &signer,\n';
+          code += '        message: vector<u8>\n';
+          code += '    ) {\n';
+          code += '        // Emit notification event\n';
           code += '    }\n\n';
           break;
       }
     });
 
+    // Generate relationship functions
+    if (relationships.oneToMany.length > 0) {
+      code += '    // Functions for one-to-many relationships\n';
+      code += '    public fun add_to_collection(\n';
+      code += '        owner: &signer,\n';
+      code += '        collection_name: vector<u8>,\n';
+      code += '        item_id: u64\n';
+      code += '    ) {\n';
+      code += '        // Add item to the collection\n';
+      code += '    }\n\n';
+      
+      code += '    public fun remove_from_collection(\n';
+      code += '        owner: &signer,\n';
+      code += '        collection_name: vector<u8>,\n';
+      code += '        item_id: u64\n';
+      code += '    ) {\n';
+      code += '        // Remove item from the collection\n';
+      code += '    }\n\n';
+    }
+
+    if (relationships.manyToOne.length > 0) {
+      code += '    // Functions for many-to-one relationships\n';
+      code += '    public fun initialize_resource_account(\n';
+      code += '        admin: &signer,\n';
+      code += '        seed: vector<u8>\n';
+      code += '    ) {\n';
+      code += '        // Create a resource account and store its capability\n';
+      code += '    }\n\n';
+      
+      code += '    public fun execute_as_resource(\n';
+      code += '        admin: &signer,\n';
+      code += '        action: u64\n';
+      code += '    ) {\n';
+      code += '        // Execute actions as the resource account\n';
+      code += '    }\n\n';
+    }
+
     // Generate token-related functions if token nodes exist
-    const tokenNodes = nodes.filter(node => node.type === 'token');
     if (tokenNodes.length > 0) {
+      code += '    // Initialize and mint tokens\n';
+      code += '    public fun initialize_token(\n';
+      code += '        admin: &signer,\n';
+      code += '        name: vector<u8>,\n';
+      code += '        symbol: vector<u8>,\n';
+      code += '        decimals: u8\n';
+      code += '    ) {\n';
+      code += '        // Initialize token with metadata\n';
+      code += '    }\n\n';
+      
       code += '    public entry fun mint_token(\n';
-      code += '        account: &signer,\n';
+      code += '        admin: &signer,\n';
+      code += '        to: address,\n';
       code += '        amount: u64\n';
       code += '    ) {\n';
-      code += '        // Token minting implementation\n';
+      code += '        // Mint tokens to the specified address\n';
+      code += '    }\n\n';
+      
+      code += '    public entry fun burn_token(\n';
+      code += '        owner: &signer,\n';
+      code += '        amount: u64\n';
+      code += '    ) {\n';
+      code += '        // Burn tokens from the owner\n';
       code += '    }\n\n';
     }
 
     // Close the module
     code += '}';
     return code;
-  }, [nodes, edges]);
+  }, [nodes, edges, identifyRelationships]);
 
   return (
     <div className="flex h-screen bg-gray-50">

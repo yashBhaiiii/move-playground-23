@@ -88,43 +88,73 @@ const Playground = () => {
   );
 
   const generateCode = useCallback(() => {
-    // Generate Move code based on the nodes and edges
-    let code = 'module ExampleContract {\n';
-    
-    // Check if we have any deposit actions
-    const hasDeposit = nodes.some(node => 
-      node.type === 'action' && node.data.label === 'Deposit'
-    );
-    
-    if (hasDeposit) {
-      code += '    public fun deposit(collateral: u64, account: address) {\n';
-      code += '        assert!(collateral >= 1 && collateral <= 2, Errors::INVALID_COLLATERAL);\n';
-      code += '        // Transfer collateral to account\n';
+    // Initialize code structure
+    let code = 'module SmartContract {\n';
+    code += '    use std::signer;\n';
+    code += '    use aptos_framework::coin;\n\n';
+
+    // Generate struct definitions based on the nodes
+    const structNodes = nodes.filter(node => node.type === 'value' || node.type === 'bound');
+    if (structNodes.length > 0) {
+      structNodes.forEach(node => {
+        code += `    struct ${node.data.label} {\n`;
+        code += '        value: u64\n';
+        code += '    }\n\n';
+      });
+    }
+
+    // Generate functions based on action nodes
+    const actionNodes = nodes.filter(node => node.type === 'action');
+    actionNodes.forEach(node => {
+      const connectedEdges = edges.filter(edge => edge.source === node.id || edge.target === node.id);
+      const connectedNodes = new Set(
+        connectedEdges.flatMap(edge => [
+          nodes.find(n => n.id === edge.source),
+          nodes.find(n => n.id === edge.target)
+        ]).filter(Boolean)
+      );
+
+      switch (node.data.label) {
+        case 'Deposit':
+          code += '    public entry fun deposit(\n';
+          code += '        account: &signer,\n';
+          code += '        amount: u64\n';
+          code += '    ) {\n';
+          code += '        // Deposit implementation\n';
+          code += '    }\n\n';
+          break;
+        case 'Withdraw':
+          code += '    public entry fun withdraw(\n';
+          code += '        account: &signer,\n';
+          code += '        amount: u64\n';
+          code += '    ) {\n';
+          code += '        // Withdraw implementation\n';
+          code += '    }\n\n';
+          break;
+        case 'Transfer':
+          code += '    public entry fun transfer(\n';
+          code += '        from: &signer,\n';
+          code += '        to: address,\n';
+          code += '        amount: u64\n';
+          code += '    ) {\n';
+          code += '        // Transfer implementation\n';
+          code += '    }\n\n';
+          break;
+      }
+    });
+
+    // Generate token-related functions if token nodes exist
+    const tokenNodes = nodes.filter(node => node.type === 'token');
+    if (tokenNodes.length > 0) {
+      code += '    public entry fun mint_token(\n';
+      code += '        account: &signer,\n';
+      code += '        amount: u64\n';
+      code += '    ) {\n';
+      code += '        // Token minting implementation\n';
       code += '    }\n\n';
     }
-    
-    // Check if we have any pay actions
-    const hasPay = nodes.some(node => 
-      node.type === 'contract' && node.data.label === 'Pay'
-    );
-    
-    if (hasPay) {
-      code += '    public fun pay(payee: address, amount: u64, currency: string) {\n';
-      code += '        // Transfer amount of currency to payee\n';
-      code += '    }\n\n';
-    }
-    
-    // Add close function if there's a close node
-    const hasClose = nodes.some(node => 
-      node.type === 'contract' && node.data.label === 'Close'
-    );
-    
-    if (hasClose) {
-      code += '    public fun close() {\n';
-      code += '        // Close the contract\n';
-      code += '    }\n\n';
-    }
-    
+
+    // Close the module
     code += '}';
     return code;
   }, [nodes, edges]);

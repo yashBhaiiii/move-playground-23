@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
@@ -13,7 +12,7 @@ const CodePreview = ({ code, generateCode }: { code: string, generateCode: () =>
     setDisplayedCode(newCode);
     toast({
       title: "Code Generated",
-      description: "Move code has been successfully generated!",
+      description: "Move smart contract code has been generated based on your flow!",
     });
   };
 

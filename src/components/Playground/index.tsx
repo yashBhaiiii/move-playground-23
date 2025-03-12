@@ -152,7 +152,7 @@ const Playground = () => {
           </ReactFlow>
         </div>
         <div className="w-96">
-          <CodePreview code={generateCode()} />
+          <CodePreview code="" generateCode={generateCode} />
         </div>
       </div>
     </div>

@@ -58,15 +58,22 @@ const Playground = () => {
       event.preventDefault();
 
       const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
-      const data = event.dataTransfer.getData('application/reactflow');
+      const type = event.dataTransfer.getData('application/reactflow/type');
+      const label = event.dataTransfer.getData('application/reactflow/label');
       
-      if (!data || !reactFlowBounds || !reactFlowInstance) return;
+      // If we don't have all needed data or bounds, return early
+      if (!type || !reactFlowBounds || !reactFlowInstance) {
+        console.log('Missing data for drop:', { type, label, reactFlowBounds, reactFlowInstance });
+        return;
+      }
 
-      const { type, label } = JSON.parse(data);
-      const position = reactFlowInstance.project({
+      // Calculate the drop position
+      const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX - reactFlowBounds.left,
         y: event.clientY - reactFlowBounds.top,
       });
+
+      console.log('Dropping node:', { type, label, position });
 
       const newNode: Node = {
         id: `${type}-${Date.now()}`,

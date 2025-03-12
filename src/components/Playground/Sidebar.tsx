@@ -64,8 +64,12 @@ const Sidebar = () => {
   };
 
   const onDragStart = (event: React.DragEvent, nodeType: string, nodeLabel: string) => {
-    event.dataTransfer.setData('application/reactflow', JSON.stringify({ type: nodeType, label: nodeLabel }));
+    // Set individual pieces of data instead of JSON stringifying
+    event.dataTransfer.setData('application/reactflow/type', nodeType);
+    event.dataTransfer.setData('application/reactflow/label', nodeLabel);
     event.dataTransfer.effectAllowed = 'move';
+    
+    console.log('Drag started:', { nodeType, nodeLabel });
   };
 
   return (

@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from 'react';
 import {
   ReactFlow,
@@ -48,6 +47,13 @@ interface NodeTemplate {
   currency?: string;
   tokenName?: string;
   role?: string;
+  shape?: string;
+  handles?: {
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+  };
 }
 
 const Playground = () => {
@@ -77,13 +83,11 @@ const Playground = () => {
       const label = event.dataTransfer.getData('application/reactflow/label');
       const templateJson = event.dataTransfer.getData('application/reactflow/template');
       
-      // If we don't have all needed data or bounds, return early
       if (!type || !reactFlowBounds || !reactFlowInstance) {
         console.log('Missing data for drop:', { type, label, reactFlowBounds, reactFlowInstance });
         return;
       }
 
-      // Parse template data if available
       let templateData = {};
       try {
         if (templateJson) {
@@ -93,7 +97,6 @@ const Playground = () => {
         console.error('Error parsing template data:', error);
       }
 
-      // Calculate the drop position
       const position = reactFlowInstance.screenToFlowPosition({
         x: event.clientX - reactFlowBounds.left,
         y: event.clientY - reactFlowBounds.top,
@@ -155,16 +158,13 @@ const Playground = () => {
     });
   }, []);
 
-  // Helper function to identify relationship types
   const identifyRelationships = useCallback(() => {
     const relationships = {
       oneToMany: [],
       manyToOne: []
     };
 
-    // Create a map of target nodes and their source connections
     const targetToSources: Record<string, string[]> = {};
-    // Create a map of source nodes and their target connections
     const sourceToTargets: Record<string, string[]> = {};
 
     edges.forEach(edge => {
@@ -179,7 +179,6 @@ const Playground = () => {
       sourceToTargets[edge.source].push(edge.target);
     });
 
-    // Find many-to-one relationships: multiple sources connecting to one target
     Object.keys(targetToSources).forEach(targetId => {
       if (targetToSources[targetId].length > 1) {
         const targetNode = nodes.find(n => n.id === targetId);
@@ -196,7 +195,6 @@ const Playground = () => {
       }
     });
 
-    // Find one-to-many relationships: one source connecting to multiple targets
     Object.keys(sourceToTargets).forEach(sourceId => {
       if (sourceToTargets[sourceId].length > 1) {
         const sourceNode = nodes.find(n => n.id === sourceId);
@@ -217,18 +215,15 @@ const Playground = () => {
   }, [nodes, edges]);
 
   const generateCode = useCallback(() => {
-    // Initialize code structure
     let code = 'module SmartContract {\n';
     code += '    use std::signer;\n';
     code += '    use std::vector;\n';
     code += '    use aptos_framework::coin;\n';
     code += '    use aptos_framework::account;\n\n';
 
-    // Identify relationships for more complex code generation
     const relationships = identifyRelationships();
     console.log('Identified relationships:', relationships);
 
-    // Generate struct definitions based on the nodes
     const structNodes = nodes.filter(node => node.type === 'value' || node.type === 'bound');
     if (structNodes.length > 0) {
       structNodes.forEach(node => {
@@ -238,7 +233,6 @@ const Playground = () => {
       });
     }
 
-    // Generate relationship structs
     if (relationships.oneToMany.length > 0) {
       relationships.oneToMany.forEach((rel, idx) => {
         const sourceName = rel.source.data.label.replace(/\s+/g, '');
@@ -250,7 +244,6 @@ const Playground = () => {
       });
     }
 
-    // Generate resource account struct if we have many-to-one relationships
     if (relationships.manyToOne.length > 0) {
       code += '    // Resource account for many-to-one relationships\n';
       code += '    struct ResourceAccount {\n';
@@ -258,7 +251,6 @@ const Playground = () => {
       code += '    }\n\n';
     }
 
-    // Generate token structures if token nodes exist
     const tokenNodes = nodes.filter(node => node.type === 'token');
     if (tokenNodes.length > 0) {
       code += '    // Token definitions\n';
@@ -271,7 +263,6 @@ const Playground = () => {
       code += '    }\n\n';
     }
 
-    // Generate action functions
     const actionNodes = nodes.filter(node => node.type === 'action');
     actionNodes.forEach(node => {
       const connectedEdges = edges.filter(edge => edge.source === node.id || edge.target === node.id);
@@ -331,7 +322,6 @@ const Playground = () => {
       }
     });
 
-    // Generate relationship functions
     if (relationships.oneToMany.length > 0) {
       code += '    // Functions for one-to-many relationships\n';
       code += '    public fun add_to_collection(\n';
@@ -368,7 +358,6 @@ const Playground = () => {
       code += '    }\n\n';
     }
 
-    // Generate token-related functions if token nodes exist
     if (tokenNodes.length > 0) {
       code += '    // Initialize and mint tokens\n';
       code += '    public fun initialize_token(\n';
@@ -396,7 +385,6 @@ const Playground = () => {
       code += '    }\n\n';
     }
 
-    // Close the module
     code += '}';
     return code;
   }, [nodes, edges, identifyRelationships]);

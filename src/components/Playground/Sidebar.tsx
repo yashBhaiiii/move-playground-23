@@ -63,6 +63,13 @@ interface NodeTemplate {
   currency?: string;
   tokenName?: string;
   role?: string;
+  shape?: string;
+  handles?: {
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+  };
 }
 
 // Define the props interface with the onNodeTemplateChange function
@@ -143,7 +150,9 @@ const Sidebar = ({ onNodeTemplateChange }: SidebarProps) => {
     // Start with the template or default values
     const initialData: NodeTemplate = savedTemplate || {
       label: editingNode.label,
-      type: editingNode.type
+      type: editingNode.type,
+      handles: { top: 1, right: 0, bottom: 1, left: 0 }, // Default handle configuration
+      shape: 'rounded-lg' // Default shape
     };
     
     return initialData;

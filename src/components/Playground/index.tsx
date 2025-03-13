@@ -163,9 +163,9 @@ const Playground = () => {
     };
 
     // Create a map of target nodes and their source connections
-    const targetToSources = {};
+    const targetToSources: Record<string, string[]> = {};
     // Create a map of source nodes and their target connections
-    const sourceToTargets = {};
+    const sourceToTargets: Record<string, string[]> = {};
 
     edges.forEach(edge => {
       if (!targetToSources[edge.target]) {
@@ -425,7 +425,7 @@ const Playground = () => {
           </ReactFlow>
         </div>
         <div className="w-96">
-          <CodePreview code="" generateCode={generateCode} />
+          <CodePreview code={generateCode()} generateCode={generateCode} />
         </div>
       </div>
 

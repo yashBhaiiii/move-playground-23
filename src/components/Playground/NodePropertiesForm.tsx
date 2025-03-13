@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -29,9 +28,16 @@ interface NodePropertiesFormProps {
   onSubmit: (data: NodeFormValues) => void;
   nodeType: string;
   nodeLabel: string;
+  developerMode?: boolean;
 }
 
-const NodePropertiesForm = ({ initialData, onSubmit, nodeType, nodeLabel }: NodePropertiesFormProps) => {
+const NodePropertiesForm = ({ 
+  initialData, 
+  onSubmit, 
+  nodeType, 
+  nodeLabel,
+  developerMode = false
+}: NodePropertiesFormProps) => {
   const form = useForm<NodeFormValues>({
     defaultValues: initialData
   });
@@ -196,112 +202,114 @@ const NodePropertiesForm = ({ initialData, onSubmit, nodeType, nodeLabel }: Node
           />
         )}
 
-        {/* Shape Selection */}
-        <FormField
-          control={form.control}
-          name="shape"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Node Shape</FormLabel>
-              <FormControl>
-                <select
-                  className="w-full border border-gray-300 rounded-md p-2"
-                  {...field}
-                  defaultValue={field.value || 'rounded-lg'}
-                >
-                  {shapes.map((shape) => (
-                    <option key={shape.value} value={shape.value}>
-                      {shape.label}
-                    </option>
-                  ))}
-                </select>
-              </FormControl>
-            </FormItem>
-          )}
-        />
+        {developerMode && (
+          <>
+            <FormField
+              control={form.control}
+              name="shape"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Node Shape</FormLabel>
+                  <FormControl>
+                    <select
+                      className="w-full border border-gray-300 rounded-md p-2"
+                      {...field}
+                      defaultValue={field.value || 'rounded-lg'}
+                    >
+                      {shapes.map((shape) => (
+                        <option key={shape.value} value={shape.value}>
+                          {shape.label}
+                        </option>
+                      ))}
+                    </select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-        {/* Connection Handles */}
-        <div className="border rounded-md p-3 space-y-3">
-          <h3 className="font-medium text-sm">Connection Points</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <FormField
-              control={form.control}
-              name="handles.top"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Top Handles</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min="0" 
-                      max="5" 
-                      {...field} 
-                      value={field.value || 0}
-                      onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="handles.right"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Right Handles</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min="0" 
-                      max="5" 
-                      {...field} 
-                      value={field.value || 0}
-                      onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="handles.bottom"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bottom Handles</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min="0" 
-                      max="5" 
-                      {...field} 
-                      value={field.value || 0}
-                      onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="handles.left"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Left Handles</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min="0" 
-                      max="5" 
-                      {...field} 
-                      value={field.value || 0}
-                      onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
+            <div className="border rounded-md p-3 space-y-3">
+              <h3 className="font-medium text-sm">Connection Points</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <FormField
+                  control={form.control}
+                  name="handles.top"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Top Handles</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          max="5" 
+                          {...field} 
+                          value={field.value || 0}
+                          onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="handles.right"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Right Handles</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          max="5" 
+                          {...field} 
+                          value={field.value || 0}
+                          onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="handles.bottom"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bottom Handles</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          max="5" 
+                          {...field} 
+                          value={field.value || 0}
+                          onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="handles.left"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Left Handles</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="0" 
+                          max="5" 
+                          {...field} 
+                          value={field.value || 0}
+                          onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="flex justify-end pt-4">
           <button type="submit" className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">

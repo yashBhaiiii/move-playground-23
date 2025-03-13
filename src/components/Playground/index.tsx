@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from 'react';
 import {
   ReactFlow,
@@ -64,6 +63,8 @@ const Playground = () => {
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [nodeTemplates, setNodeTemplates] = useState<Record<string, Record<string, NodeTemplate>>>({});
+  
+  const developerMode = false;
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -322,6 +323,12 @@ const Playground = () => {
           code += '        // Emit notification event\n';
           code += '    }\n\n';
           break;
+        default:
+          code += `    public entry fun ${nodeLabel.toLowerCase().replace(/\s+/g, '_')}(\n`;
+          code += '        account: &signer\n';
+          code += '    ) {\n';
+          code += `        // Implementation for ${nodeLabel}\n`;
+          code += '    }\n\n';
       }
     });
 
@@ -425,9 +432,10 @@ const Playground = () => {
           isOpen={!!selectedNode}
           onClose={handleCloseNodeEdit}
           nodeType={selectedNode.type}
-          nodeLabel={selectedNode.data.label}
+          nodeLabel={selectedNode.data.label as string}
           initialData={selectedNode.data}
           onSubmit={handleUpdateNode}
+          developerMode={developerMode}
         />
       )}
     </div>

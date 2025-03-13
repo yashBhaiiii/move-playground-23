@@ -9,6 +9,7 @@ interface NodePropertiesDialogProps {
   nodeLabel: string;
   initialData: any;
   onSubmit: (data: any) => void;
+  developerMode?: boolean;
 }
 
 const NodePropertiesDialog = ({ 
@@ -17,7 +18,8 @@ const NodePropertiesDialog = ({
   nodeType, 
   nodeLabel, 
   initialData, 
-  onSubmit 
+  onSubmit,
+  developerMode = false
 }: NodePropertiesDialogProps) => {
   if (!isOpen) return null;
 
@@ -41,7 +43,8 @@ const NodePropertiesDialog = ({
           nodeType={nodeType} 
           nodeLabel={nodeLabel} 
           initialData={initialData} 
-          onSubmit={handleSubmit} 
+          onSubmit={handleSubmit}
+          developerMode={developerMode}
         />
       </div>
     </div>

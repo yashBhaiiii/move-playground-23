@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -71,6 +71,30 @@ const Playground = () => {
   const [canvasName, setCanvasName] = useState<string>("Untitled Canvas");
   
   const developerMode = false;
+
+  // Load template data from localStorage if available
+  useEffect(() => {
+    const storedTemplate = localStorage.getItem('selectedTemplate');
+    
+    if (storedTemplate) {
+      try {
+        const templateData = JSON.parse(storedTemplate);
+        setNodes(templateData.nodes || []);
+        setEdges(templateData.edges || []);
+        if (templateData.name) {
+          setCanvasName(templateData.name);
+        }
+        toast({
+          title: "Template loaded",
+          description: `${templateData.name || "Template"} has been loaded into the editor.`,
+        });
+        // Clear the localStorage after loading
+        localStorage.removeItem('selectedTemplate');
+      } catch (error) {
+        console.error('Error loading template data:', error);
+      }
+    }
+  }, [setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -167,9 +191,11 @@ const Playground = () => {
   }, []);
 
   const identifyRelationships = useCallback(() => {
+    type RelationshipNode = Node<{ label: string }>;
+    
     const relationships = {
-      oneToMany: [] as { source: Node; targets: Node[] }[],
-      manyToOne: [] as { target: Node; sources: Node[] }[]
+      oneToMany: [] as { source: RelationshipNode; targets: RelationshipNode[] }[],
+      manyToOne: [] as { target: RelationshipNode; sources: RelationshipNode[] }[]
     };
 
     const targetToSources: Record<string, string[]> = {};
@@ -189,10 +215,10 @@ const Playground = () => {
 
     Object.keys(targetToSources).forEach(targetId => {
       if (targetToSources[targetId].length > 1) {
-        const targetNode = nodes.find(n => n.id === targetId);
+        const targetNode = nodes.find(n => n.id === targetId) as RelationshipNode | undefined;
         const sourceNodes = targetToSources[targetId]
           .map(sourceId => nodes.find(n => n.id === sourceId))
-          .filter((n): n is Node => n !== undefined);
+          .filter((n): n is RelationshipNode => n !== undefined);
         
         if (targetNode && sourceNodes.length > 1) {
           relationships.manyToOne.push({
@@ -205,10 +231,10 @@ const Playground = () => {
 
     Object.keys(sourceToTargets).forEach(sourceId => {
       if (sourceToTargets[sourceId].length > 1) {
-        const sourceNode = nodes.find(n => n.id === sourceId);
+        const sourceNode = nodes.find(n => n.id === sourceId) as RelationshipNode | undefined;
         const targetNodes = sourceToTargets[sourceId]
           .map(targetId => nodes.find(n => n.id === targetId))
-          .filter((n): n is Node => n !== undefined);
+          .filter((n): n is RelationshipNode => n !== undefined);
         
         if (sourceNode && targetNodes.length > 1) {
           relationships.oneToMany.push({
@@ -438,7 +464,7 @@ const Playground = () => {
   }, [canvasName, nodes, edges]);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 pt-14">
       <Sidebar onNodeTemplateChange={handleNodeTemplateChange} />
       <div className="flex-1 flex flex-col">
         <div className="bg-white border-b border-gray-200 p-2 flex items-center">

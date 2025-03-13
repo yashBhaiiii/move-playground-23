@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef } from 'react';
 import {
   ReactFlow,
@@ -11,6 +12,9 @@ import {
   useEdgesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { FilePlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 
 import Sidebar from './Sidebar';
 import CodePreview from './CodePreview';
@@ -24,6 +28,7 @@ import TokenNode from './NodeTypes/TokenNode';
 import PartyNode from './NodeTypes/PartyNode';
 import PayeeNode from './NodeTypes/PayeeNode';
 import NodePropertiesDialog from './NodePropertiesDialog';
+import { saveCanvas } from '@/services/mongodb';
 
 const nodeTypes = {
   role: RoleNode,
@@ -63,6 +68,7 @@ const Playground = () => {
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [nodeTemplates, setNodeTemplates] = useState<Record<string, Record<string, NodeTemplate>>>({});
+  const [canvasName, setCanvasName] = useState<string>("Untitled Canvas");
   
   const developerMode = false;
 
@@ -399,31 +405,91 @@ const Playground = () => {
     return code;
   }, [nodes, edges, identifyRelationships]);
 
+  const handleNewCanvas = useCallback(() => {
+    if (nodes.length > 0 || edges.length > 0) {
+      // Ask for confirmation if there are items on the canvas
+      if (window.confirm("Are you sure you want to clear the canvas? All unsaved changes will be lost.")) {
+        setNodes([]);
+        setEdges([]);
+        setCanvasName("Untitled Canvas");
+        toast({
+          title: "Canvas cleared",
+          description: "Started a new canvas.",
+        });
+      }
+    } else {
+      // If canvas is already empty, just reset the name
+      setCanvasName("Untitled Canvas");
+    }
+  }, [nodes, edges, setNodes, setEdges]);
+
+  const handleSaveCanvas = useCallback(async () => {
+    // Save the current canvas to MongoDB
+    const canvasData = {
+      name: canvasName,
+      nodes,
+      edges
+    };
+    
+    const canvasId = await saveCanvas(canvasData);
+    if (canvasId) {
+      console.log(`Canvas saved with ID: ${canvasId}`);
+    }
+  }, [canvasName, nodes, edges]);
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar onNodeTemplateChange={handleNodeTemplateChange} />
-      <div className="flex-1 flex">
-        <div className="flex-1 h-full" ref={reactFlowWrapper}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onInit={setReactFlowInstance}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            onNodeClick={onNodeClick}
-            nodeTypes={nodeTypes}
-            fitView
-            className="bg-dots-darker"
+      <div className="flex-1 flex flex-col">
+        <div className="bg-white border-b border-gray-200 p-2 flex items-center">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleNewCanvas}
+            className="mr-2"
           >
-            <Background />
-            <Controls />
-          </ReactFlow>
+            <FilePlus className="h-4 w-4 mr-1" />
+            New Canvas
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleSaveCanvas}
+            className="mr-4"
+          >
+            Save
+          </Button>
+          <input
+            type="text"
+            value={canvasName}
+            onChange={(e) => setCanvasName(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+            placeholder="Canvas Name"
+          />
         </div>
-        <div className="w-96">
-          <CodePreview code={generateCode()} generateCode={generateCode} />
+        <div className="flex-1 flex">
+          <div className="flex-1 h-full" ref={reactFlowWrapper}>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onInit={setReactFlowInstance}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              onNodeClick={onNodeClick}
+              nodeTypes={nodeTypes}
+              fitView
+              className="bg-dots-darker"
+            >
+              <Background />
+              <Controls />
+            </ReactFlow>
+          </div>
+          <div className="w-96">
+            <CodePreview code={generateCode()} generateCode={generateCode} />
+          </div>
         </div>
       </div>
 

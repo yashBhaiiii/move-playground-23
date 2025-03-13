@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef } from 'react';
 import {
   ReactFlow,
@@ -160,8 +161,8 @@ const Playground = () => {
 
   const identifyRelationships = useCallback(() => {
     const relationships = {
-      oneToMany: [],
-      manyToOne: []
+      oneToMany: [] as { source: Node; targets: Node[] }[],
+      manyToOne: [] as { target: Node; sources: Node[] }[]
     };
 
     const targetToSources: Record<string, string[]> = {};
@@ -182,9 +183,9 @@ const Playground = () => {
     Object.keys(targetToSources).forEach(targetId => {
       if (targetToSources[targetId].length > 1) {
         const targetNode = nodes.find(n => n.id === targetId);
-        const sourceNodes = targetToSources[targetId].map(sourceId => 
-          nodes.find(n => n.id === sourceId)
-        ).filter(Boolean);
+        const sourceNodes = targetToSources[targetId]
+          .map(sourceId => nodes.find(n => n.id === sourceId))
+          .filter((n): n is Node => n !== undefined);
         
         if (targetNode && sourceNodes.length > 1) {
           relationships.manyToOne.push({
@@ -198,9 +199,9 @@ const Playground = () => {
     Object.keys(sourceToTargets).forEach(sourceId => {
       if (sourceToTargets[sourceId].length > 1) {
         const sourceNode = nodes.find(n => n.id === sourceId);
-        const targetNodes = sourceToTargets[sourceId].map(targetId => 
-          nodes.find(n => n.id === targetId)
-        ).filter(Boolean);
+        const targetNodes = sourceToTargets[sourceId]
+          .map(targetId => nodes.find(n => n.id === targetId))
+          .filter((n): n is Node => n !== undefined);
         
         if (sourceNode && targetNodes.length > 1) {
           relationships.oneToMany.push({
@@ -227,15 +228,16 @@ const Playground = () => {
     const structNodes = nodes.filter(node => node.type === 'value' || node.type === 'bound');
     if (structNodes.length > 0) {
       structNodes.forEach(node => {
-        code += `    struct ${node.data.label} {\n`;
+        const nodeLabel = node.data.label as string;
+        code += `    struct ${nodeLabel} {\n`;
         code += '        value: u64\n';
         code += '    }\n\n';
       });
     }
 
     if (relationships.oneToMany.length > 0) {
-      relationships.oneToMany.forEach((rel, idx) => {
-        const sourceName = rel.source.data.label.replace(/\s+/g, '');
+      relationships.oneToMany.forEach((rel) => {
+        const sourceName = (rel.source.data.label as string).replace(/\s+/g, '');
         code += `    // One-to-many relationship for ${sourceName}\n`;
         code += `    struct ${sourceName}Collection {\n`;
         code += '        owner: address,\n';
@@ -273,7 +275,8 @@ const Playground = () => {
         ]).filter(Boolean)
       );
 
-      switch (node.data.label) {
+      const nodeLabel = node.data.label as string;
+      switch (nodeLabel) {
         case 'Deposit':
           code += '    public entry fun deposit(\n';
           code += '        account: &signer,\n';

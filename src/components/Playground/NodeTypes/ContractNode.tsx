@@ -1,8 +1,14 @@
 
 import { Handle, Position } from '@xyflow/react';
 
-// Update the data type to include the description property
-const ContractNode = ({ data }: { data: { label: string; description?: string } }) => {
+interface ContractNodeProps {
+  data: { 
+    label: string; 
+    description?: string;
+  }
+}
+
+const ContractNode = ({ data }: ContractNodeProps) => {
   return (
     <div className="px-4 py-2 shadow-lg rounded-lg bg-purple-500/90 backdrop-blur-sm border border-purple-400 min-w-[150px]">
       <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-purple-400" />

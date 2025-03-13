@@ -1,19 +1,35 @@
 
 import { Handle, Position } from '@xyflow/react';
 
-const TokenNode = ({ data }: { data: { label: string; currency?: string; tokenName?: string } }) => {
+interface TokenNodeProps {
+  data: { 
+    label: string; 
+    currency?: string; 
+    tokenName?: string;
+  }
+}
+
+const TokenNode = ({ data }: TokenNodeProps) => {
   // Custom label for display
   const getDisplayContent = () => {
     if (data.label === 'Currency') {
-      return <span className="text-sm font-medium text-white bg-red-500 py-1 px-2 rounded">lovelace</span>;
+      return (
+        <span className="text-sm font-medium text-white bg-red-500 py-1 px-2 rounded">
+          {data.currency || 'lovelace'}
+        </span>
+      );
     } else if (data.label === 'Token ID') {
       return (
         <div className="flex flex-col gap-1">
           <span className="text-sm font-medium text-white bg-red-500 py-1 px-2 rounded">Token with currency</span>
           <div className="flex items-center gap-1">
             <span className="bg-white text-red-500 rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold">$</span>
+            <span className="text-sm font-medium text-white">{data.currency || 'currency'}</span>
+          </div>
+          <div className="flex items-center gap-1">
             <span className="text-sm font-medium text-white">and token name</span>
             <span className="bg-white text-red-500 rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold">T</span>
+            <span className="text-sm font-medium text-white">{data.tokenName || 'token'}</span>
           </div>
         </div>
       );

@@ -24,6 +24,7 @@ import BoundNode from './NodeTypes/BoundNode';
 import TokenNode from './NodeTypes/TokenNode';
 import PartyNode from './NodeTypes/PartyNode';
 import PayeeNode from './NodeTypes/PayeeNode';
+import NodePropertiesDialog from './NodePropertiesDialog';
 
 const nodeTypes = {
   role: RoleNode,
@@ -37,11 +38,25 @@ const nodeTypes = {
   payee: PayeeNode
 };
 
+interface NodeTemplate {
+  label: string;
+  type: string;
+  description?: string;
+  value?: string;
+  min?: string;
+  max?: string;
+  currency?: string;
+  tokenName?: string;
+  role?: string;
+}
+
 const Playground = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [nodeTemplates, setNodeTemplates] = useState<Record<string, Record<string, NodeTemplate>>>({});
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -60,11 +75,22 @@ const Playground = () => {
       const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
       const type = event.dataTransfer.getData('application/reactflow/type');
       const label = event.dataTransfer.getData('application/reactflow/label');
+      const templateJson = event.dataTransfer.getData('application/reactflow/template');
       
       // If we don't have all needed data or bounds, return early
       if (!type || !reactFlowBounds || !reactFlowInstance) {
         console.log('Missing data for drop:', { type, label, reactFlowBounds, reactFlowInstance });
         return;
+      }
+
+      // Parse template data if available
+      let templateData = {};
+      try {
+        if (templateJson) {
+          templateData = JSON.parse(templateJson);
+        }
+      } catch (error) {
+        console.error('Error parsing template data:', error);
       }
 
       // Calculate the drop position
@@ -73,19 +99,61 @@ const Playground = () => {
         y: event.clientY - reactFlowBounds.top,
       });
 
-      console.log('Dropping node:', { type, label, position });
+      console.log('Dropping node:', { type, label, position, templateData });
 
       const newNode: Node = {
         id: `${type}-${Date.now()}`,
         type,
         position,
-        data: { label, type },
+        data: { 
+          ...templateData,
+          label, 
+          type 
+        },
       };
 
       setNodes((nds) => nds.concat(newNode));
     },
     [reactFlowInstance, setNodes],
   );
+
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    setSelectedNode(node);
+  }, []);
+
+  const handleCloseNodeEdit = useCallback(() => {
+    setSelectedNode(null);
+  }, []);
+
+  const handleUpdateNode = useCallback((updatedData: any) => {
+    if (!selectedNode) return;
+
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === selectedNode.id) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              ...updatedData,
+            },
+          };
+        }
+        return node;
+      })
+    );
+  }, [selectedNode, setNodes]);
+
+  const handleNodeTemplateChange = useCallback((type: string, label: string, data: NodeTemplate) => {
+    setNodeTemplates((prev) => {
+      const updated = { ...prev };
+      if (!updated[type]) {
+        updated[type] = {};
+      }
+      updated[type][label] = data;
+      return updated;
+    });
+  }, []);
 
   // Helper function to identify relationship types
   const identifyRelationships = useCallback(() => {
@@ -335,7 +403,7 @@ const Playground = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar onNodeTemplateChange={handleNodeTemplateChange} />
       <div className="flex-1 flex">
         <div className="flex-1 h-full" ref={reactFlowWrapper}>
           <ReactFlow
@@ -347,6 +415,7 @@ const Playground = () => {
             onInit={setReactFlowInstance}
             onDrop={onDrop}
             onDragOver={onDragOver}
+            onNodeClick={onNodeClick}
             nodeTypes={nodeTypes}
             fitView
             className="bg-dots-darker"
@@ -359,6 +428,17 @@ const Playground = () => {
           <CodePreview code="" generateCode={generateCode} />
         </div>
       </div>
+
+      {selectedNode && (
+        <NodePropertiesDialog
+          isOpen={!!selectedNode}
+          onClose={handleCloseNodeEdit}
+          nodeType={selectedNode.type}
+          nodeLabel={selectedNode.data.label}
+          initialData={selectedNode.data}
+          onSubmit={handleUpdateNode}
+        />
+      )}
     </div>
   );
 };

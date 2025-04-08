@@ -1,8 +1,8 @@
 
-import { Builder } from '@/components/builder';
+import Playground from '@/components/Playground';
 
 const Index = () => {
-  return <Builder />;
+  return <Playground />;
 };
 
 export default Index;

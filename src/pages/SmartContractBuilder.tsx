@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Builder } from '@/components/builder';
+import Playground from '@/components/Playground';
 
 const SmartContractBuilder = () => {
-  return <Builder />;
+  return <Playground />;
 };
 
 export default SmartContractBuilder;

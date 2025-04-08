@@ -136,7 +136,7 @@ const CodePreview = ({
 
   return (
     <div 
-      className="h-full flex flex-col bg-white/95 backdrop-blur-sm border-l border-gray-200 shadow-md"
+      className="h-full flex flex-col bg-white/95 backdrop-blur-sm border-l border-gray-200 shadow-md overflow-hidden"
       style={{ width: `${width}px` }}
     >
       <div 
@@ -145,7 +145,7 @@ const CodePreview = ({
         onMouseDown={handleResizeStart}
       />
 
-      <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-white to-gray-50">
+      <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-white to-gray-50 flex-shrink-0">
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
             <Code className="h-5 w-5 text-purple-500" />
@@ -172,8 +172,8 @@ const CodePreview = ({
         </p>
       </div>
 
-      <div className="flex-1 overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full overflow-auto p-4">
           {displayedCode ? (
             <CodeMirror
               value={displayedCode}
@@ -194,7 +194,7 @@ const CodePreview = ({
         </div>
       </div>
 
-      <div className="p-4 border-t border-gray-200 bg-gradient-to-r from-white to-gray-50 flex justify-end space-x-3">
+      <div className="p-4 border-t border-gray-200 bg-gradient-to-r from-white to-gray-50 flex justify-end space-x-3 flex-shrink-0">
         <Button 
           className="bg-purple-600 hover:bg-purple-700 text-white transition-all duration-200 flex items-center gap-1 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           onClick={handleGenerateCode}

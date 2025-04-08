@@ -453,9 +453,9 @@ const Templates = () => {
       description: `${template.name} template loaded. Redirecting to editor...`,
     });
 
-    // Navigate to the playground with the selected template
+    // Navigate to the smart-contract-builder instead of home page
     setTimeout(() => {
-      navigate('/');
+      navigate('/smart-contract-builder');
     }, 1000);
   };
 

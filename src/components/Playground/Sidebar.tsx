@@ -165,7 +165,7 @@ const Sidebar = ({ onNodeTemplateChange, isOpen, onToggle }: SidebarProps) => {
   const widthClass = isOpen ? 'w-64' : 'w-10';
   
   return (
-    <div className={`${widthClass} bg-white/80 backdrop-blur-sm border-r border-gray-200 overflow-y-auto transition-width duration-300 ease-in-out h-full flex flex-col relative`}>
+    <div className={`${widthClass} bg-white/80 backdrop-blur-sm border-r border-gray-200 h-full flex flex-col relative transition-width duration-300 ease-in-out`}>
       <button 
         onClick={onToggle}
         className="absolute right-[-12px] top-1/2 transform -translate-y-1/2 bg-white rounded-full p-1 shadow-md z-10 border border-gray-200"
@@ -182,7 +182,7 @@ const Sidebar = ({ onNodeTemplateChange, isOpen, onToggle }: SidebarProps) => {
           <div className="sticky top-0 bg-white/90 backdrop-blur-sm p-4 border-b border-gray-100 shadow-sm z-10">
             <h2 className="text-lg font-semibold text-gray-700">Components</h2>
           </div>
-          <div className="p-4 flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto p-4">
             {nodeCategories.map((category) => (
               <div key={category.type} className="mb-3">
                 <button

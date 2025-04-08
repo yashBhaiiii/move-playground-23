@@ -1,5 +1,5 @@
 
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/components/ui/toast-config';
 
 // MongoDB connection string - in a real app, this should be in environment variables
 const MONGODB_URI = "mongodb+srv://<username>:<password>@<your-cluster-url>/floweditor?retryWrites=true&w=majority";

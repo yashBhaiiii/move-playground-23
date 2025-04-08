@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import NodePropertiesDialog from './NodePropertiesDialog';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const nodeCategories = [
   { 
@@ -75,9 +76,11 @@ interface NodeTemplate {
 // Define the props interface with the onNodeTemplateChange function
 interface SidebarProps {
   onNodeTemplateChange?: (type: string, label: string, data: NodeTemplate) => void;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
-const Sidebar = ({ onNodeTemplateChange }: SidebarProps) => {
+const Sidebar = ({ onNodeTemplateChange, isOpen, onToggle }: SidebarProps) => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [editingNode, setEditingNode] = useState<{ type: string; label: string; } | null>(null);
   const [nodeTemplates, setNodeTemplates] = useState<Record<string, Record<string, NodeTemplate>>>({});
@@ -158,55 +161,73 @@ const Sidebar = ({ onNodeTemplateChange }: SidebarProps) => {
     return initialData;
   };
 
+  // Determine the width class based on the isOpen state
+  const widthClass = isOpen ? 'w-64' : 'w-10';
+  
   return (
-    <div className="w-64 bg-white/80 backdrop-blur-sm border-r border-gray-200 overflow-y-auto">
-      <div className="sticky top-0 bg-white/90 backdrop-blur-sm p-4 border-b border-gray-100 shadow-sm z-10">
-        <h2 className="text-lg font-semibold text-gray-700">Components</h2>
-      </div>
-      <div className="p-4">
-        {nodeCategories.map((category) => (
-          <div key={category.type} className="mb-3">
-            <button
-              onClick={() => toggleCategory(category.type)}
-              className={`w-full flex items-center p-2 rounded-md ${category.color} text-white text-left`}
-            >
-              <span className="font-medium">{category.label}</span>
-              <span className="ml-auto">
-                {expandedCategory === category.type ? '−' : '+'}
-              </span>
-            </button>
-            {expandedCategory === category.type && (
-              <div className="grid gap-2 mt-2">
-                {category.items.map((item) => (
-                  <div
-                    key={item}
-                    className="p-2 bg-white rounded-md shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div
-                        draggable
-                        onDragStart={(e) => onDragStart(e, category.type, item)}
-                        className="flex-1 cursor-move text-sm text-gray-700"
-                      >
-                        {item}
-                      </div>
-                      <button
-                        onClick={() => handleEditNode(category.type, item)}
-                        className="ml-2 p-1 text-gray-500 hover:text-gray-700 rounded"
-                        title="Edit"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+    <div className={`${widthClass} bg-white/80 backdrop-blur-sm border-r border-gray-200 overflow-y-auto transition-width duration-300 ease-in-out h-full flex flex-col relative`}>
+      <button 
+        onClick={onToggle}
+        className="absolute right-[-12px] top-1/2 transform -translate-y-1/2 bg-white rounded-full p-1 shadow-md z-10 border border-gray-200"
+      >
+        {isOpen ? (
+          <ChevronLeft className="h-4 w-4 text-gray-600" />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-gray-600" />
+        )}
+      </button>
+      
+      {isOpen && (
+        <>
+          <div className="sticky top-0 bg-white/90 backdrop-blur-sm p-4 border-b border-gray-100 shadow-sm z-10">
+            <h2 className="text-lg font-semibold text-gray-700">Components</h2>
           </div>
-        ))}
-      </div>
+          <div className="p-4 flex-1 overflow-y-auto">
+            {nodeCategories.map((category) => (
+              <div key={category.type} className="mb-3">
+                <button
+                  onClick={() => toggleCategory(category.type)}
+                  className={`w-full flex items-center p-2 rounded-md ${category.color} text-white text-left`}
+                >
+                  <span className="font-medium">{category.label}</span>
+                  <span className="ml-auto">
+                    {expandedCategory === category.type ? '−' : '+'}
+                  </span>
+                </button>
+                {expandedCategory === category.type && (
+                  <div className="grid gap-2 mt-2">
+                    {category.items.map((item) => (
+                      <div
+                        key={item}
+                        className="p-2 bg-white rounded-md shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div
+                            draggable
+                            onDragStart={(e) => onDragStart(e, category.type, item)}
+                            className="flex-1 cursor-move text-sm text-gray-700"
+                          >
+                            {item}
+                          </div>
+                          <button
+                            onClick={() => handleEditNode(category.type, item)}
+                            className="ml-2 p-1 text-gray-500 hover:text-gray-700 rounded"
+                            title="Edit"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       
       {editingNode && (
         <NodePropertiesDialog 

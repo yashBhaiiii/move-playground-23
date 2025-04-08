@@ -28,7 +28,9 @@ import TokenNode from './NodeTypes/TokenNode';
 import PartyNode from './NodeTypes/PartyNode';
 import PayeeNode from './NodeTypes/PayeeNode';
 import NodePropertiesDialog from './NodePropertiesDialog';
+import CanvasMenu from './CanvasMenu';
 import { saveCanvas } from '@/services/mongodb';
+import { generateCodeForLanguage } from '@/services/codeGenerators';
 
 const nodeTypes = {
   role: RoleNode,
@@ -69,6 +71,10 @@ const Playground = () => {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [nodeTemplates, setNodeTemplates] = useState<Record<string, Record<string, NodeTemplate>>>({});
   const [canvasName, setCanvasName] = useState<string>("Untitled Canvas");
+  const [showCanvasMenu, setShowCanvasMenu] = useState<boolean>(false);
+  const [isSidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [codePreviewWidth, setCodePreviewWidth] = useState<number>(400);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("move");
   
   const developerMode = false;
 
@@ -190,247 +196,6 @@ const Playground = () => {
     });
   }, []);
 
-  const identifyRelationships = useCallback(() => {
-    type RelationshipNode = Node<{ label: string }>;
-    
-    const relationships = {
-      oneToMany: [] as { source: RelationshipNode; targets: RelationshipNode[] }[],
-      manyToOne: [] as { target: RelationshipNode; sources: RelationshipNode[] }[]
-    };
-
-    const targetToSources: Record<string, string[]> = {};
-    const sourceToTargets: Record<string, string[]> = {};
-
-    edges.forEach(edge => {
-      if (!targetToSources[edge.target]) {
-        targetToSources[edge.target] = [];
-      }
-      targetToSources[edge.target].push(edge.source);
-
-      if (!sourceToTargets[edge.source]) {
-        sourceToTargets[edge.source] = [];
-      }
-      sourceToTargets[edge.source].push(edge.target);
-    });
-
-    Object.keys(targetToSources).forEach(targetId => {
-      if (targetToSources[targetId].length > 1) {
-        const targetNode = nodes.find(n => n.id === targetId) as RelationshipNode | undefined;
-        const sourceNodes = targetToSources[targetId]
-          .map(sourceId => nodes.find(n => n.id === sourceId))
-          .filter((n): n is RelationshipNode => n !== undefined);
-        
-        if (targetNode && sourceNodes.length > 1) {
-          relationships.manyToOne.push({
-            target: targetNode,
-            sources: sourceNodes
-          });
-        }
-      }
-    });
-
-    Object.keys(sourceToTargets).forEach(sourceId => {
-      if (sourceToTargets[sourceId].length > 1) {
-        const sourceNode = nodes.find(n => n.id === sourceId) as RelationshipNode | undefined;
-        const targetNodes = sourceToTargets[sourceId]
-          .map(targetId => nodes.find(n => n.id === targetId))
-          .filter((n): n is RelationshipNode => n !== undefined);
-        
-        if (sourceNode && targetNodes.length > 1) {
-          relationships.oneToMany.push({
-            source: sourceNode,
-            targets: targetNodes
-          });
-        }
-      }
-    });
-
-    return relationships;
-  }, [nodes, edges]);
-
-  const generateCode = useCallback(() => {
-    let code = 'module SmartContract {\n';
-    code += '    use std::signer;\n';
-    code += '    use std::vector;\n';
-    code += '    use aptos_framework::coin;\n';
-    code += '    use aptos_framework::account;\n\n';
-
-    const relationships = identifyRelationships();
-    console.log('Identified relationships:', relationships);
-
-    const structNodes = nodes.filter(node => node.type === 'value' || node.type === 'bound');
-    if (structNodes.length > 0) {
-      structNodes.forEach(node => {
-        const nodeLabel = node.data.label as string;
-        code += `    struct ${nodeLabel} {\n`;
-        code += '        value: u64\n';
-        code += '    }\n\n';
-      });
-    }
-
-    if (relationships.oneToMany.length > 0) {
-      relationships.oneToMany.forEach((rel) => {
-        const sourceName = (rel.source.data.label as string).replace(/\s+/g, '');
-        code += `    // One-to-many relationship for ${sourceName}\n`;
-        code += `    struct ${sourceName}Collection {\n`;
-        code += '        owner: address,\n';
-        code += '        items: vector<u64>\n';
-        code += '    }\n\n';
-      });
-    }
-
-    if (relationships.manyToOne.length > 0) {
-      code += '    // Resource account for many-to-one relationships\n';
-      code += '    struct ResourceAccount {\n';
-      code += '        signer_cap: account::SignerCapability\n';
-      code += '    }\n\n';
-    }
-
-    const tokenNodes = nodes.filter(node => node.type === 'token');
-    if (tokenNodes.length > 0) {
-      code += '    // Token definitions\n';
-      code += '    struct CoinType {}\n\n';
-      
-      code += '    // Token capabilities\n';
-      code += '    struct TokenCapabilities {\n';
-      code += '        mint_cap: coin::MintCapability<CoinType>,\n';
-      code += '        burn_cap: coin::BurnCapability<CoinType>\n';
-      code += '    }\n\n';
-    }
-
-    const actionNodes = nodes.filter(node => node.type === 'action');
-    actionNodes.forEach(node => {
-      const connectedEdges = edges.filter(edge => edge.source === node.id || edge.target === node.id);
-      const connectedNodes = new Set(
-        connectedEdges.flatMap(edge => [
-          nodes.find(n => n.id === edge.source),
-          nodes.find(n => n.id === edge.target)
-        ]).filter(Boolean)
-      );
-
-      const nodeLabel = node.data.label as string;
-      switch (nodeLabel) {
-        case 'Deposit':
-          code += '    public entry fun deposit(\n';
-          code += '        account: &signer,\n';
-          code += '        amount: u64\n';
-          code += '    ) {\n';
-          code += '        // Check if account has enough balance\n';
-          code += '        // Handle deposit logic\n';
-          code += '    }\n\n';
-          break;
-        case 'Withdraw':
-          code += '    public entry fun withdraw(\n';
-          code += '        account: &signer,\n';
-          code += '        amount: u64\n';
-          code += '    ) {\n';
-          code += '        // Verify account has enough deposited\n';
-          code += '        // Handle withdrawal logic\n';
-          code += '    }\n\n';
-          break;
-        case 'Transfer':
-          code += '    public entry fun transfer(\n';
-          code += '        from: &signer,\n';
-          code += '        to: address,\n';
-          code += '        amount: u64\n';
-          code += '    ) {\n';
-          code += '        // Verify sender authorization\n';
-          code += '        // Handle transfer logic\n';
-          code += '    }\n\n';
-          break;
-        case 'Choice':
-          code += '    public entry fun make_choice(\n';
-          code += '        account: &signer,\n';
-          code += '        choice_id: u64,\n';
-          code += '        choice_value: u64\n';
-          code += '    ) {\n';
-          code += '        // Record the choice made by the account\n';
-          code += '    }\n\n';
-          break;
-        case 'Notification':
-          code += '    public entry fun notify(\n';
-          code += '        account: &signer,\n';
-          code += '        message: vector<u8>\n';
-          code += '    ) {\n';
-          code += '        // Emit notification event\n';
-          code += '    }\n\n';
-          break;
-        default:
-          code += `    public entry fun ${nodeLabel.toLowerCase().replace(/\s+/g, '_')}(\n`;
-          code += '        account: &signer\n';
-          code += '    ) {\n';
-          code += `        // Implementation for ${nodeLabel}\n`;
-          code += '    }\n\n';
-      }
-    });
-
-    if (relationships.oneToMany.length > 0) {
-      code += '    // Functions for one-to-many relationships\n';
-      code += '    public fun add_to_collection(\n';
-      code += '        owner: &signer,\n';
-      code += '        collection_name: vector<u8>,\n';
-      code += '        item_id: u64\n';
-      code += '    ) {\n';
-      code += '        // Add item to the collection\n';
-      code += '    }\n\n';
-      
-      code += '    public fun remove_from_collection(\n';
-      code += '        owner: &signer,\n';
-      code += '        collection_name: vector<u8>,\n';
-      code += '        item_id: u64\n';
-      code += '    ) {\n';
-      code += '        // Remove item from the collection\n';
-      code += '    }\n\n';
-    }
-
-    if (relationships.manyToOne.length > 0) {
-      code += '    // Functions for many-to-one relationships\n';
-      code += '    public fun initialize_resource_account(\n';
-      code += '        admin: &signer,\n';
-      code += '        seed: vector<u8>\n';
-      code += '    ) {\n';
-      code += '        // Create a resource account and store its capability\n';
-      code += '    }\n\n';
-      
-      code += '    public fun execute_as_resource(\n';
-      code += '        admin: &signer,\n';
-      code += '        action: u64\n';
-      code += '    ) {\n';
-      code += '        // Execute actions as the resource account\n';
-      code += '    }\n\n';
-    }
-
-    if (tokenNodes.length > 0) {
-      code += '    // Initialize and mint tokens\n';
-      code += '    public fun initialize_token(\n';
-      code += '        admin: &signer,\n';
-      code += '        name: vector<u8>,\n';
-      code += '        symbol: vector<u8>,\n';
-      code += '        decimals: u8\n';
-      code += '    ) {\n';
-      code += '        // Initialize token with metadata\n';
-      code += '    }\n\n';
-      
-      code += '    public entry fun mint_token(\n';
-      code += '        admin: &signer,\n';
-      code += '        to: address,\n';
-      code += '        amount: u64\n';
-      code += '    ) {\n';
-      code += '        // Mint tokens to the specified address\n';
-      code += '    }\n\n';
-      
-      code += '    public entry fun burn_token(\n';
-      code += '        owner: &signer,\n';
-      code += '        amount: u64\n';
-      code += '    ) {\n';
-      code += '        // Burn tokens from the owner\n';
-      code += '    }\n\n';
-    }
-
-    code += '}';
-    return code;
-  }, [nodes, edges, identifyRelationships]);
-
   const handleNewCanvas = useCallback(() => {
     if (nodes.length > 0 || edges.length > 0) {
       // Ask for confirmation if there are items on the canvas
@@ -459,13 +224,43 @@ const Playground = () => {
     
     const canvasId = await saveCanvas(canvasData);
     if (canvasId) {
+      toast({
+        title: "Canvas Saved",
+        description: `Canvas "${canvasName}" has been saved successfully.`,
+      });
       console.log(`Canvas saved with ID: ${canvasId}`);
     }
   }, [canvasName, nodes, edges]);
 
+  const handleCanvasSelect = useCallback((canvas: any) => {
+    setNodes(canvas.nodes || []);
+    setEdges(canvas.edges || []);
+    setCanvasName(canvas.name || "Loaded Canvas");
+    toast({
+      title: "Canvas Loaded",
+      description: `Canvas "${canvas.name}" has been loaded.`,
+    });
+  }, [setNodes, setEdges]);
+
+  const handleLanguageChange = useCallback((language: string) => {
+    setSelectedLanguage(language);
+  }, []);
+
+  const generateCode = useCallback((language: string) => {
+    return generateCodeForLanguage(language, nodes, edges);
+  }, [nodes, edges]);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen(prev => !prev);
+  }, []);
+
   return (
     <div className="flex h-screen bg-gray-50 pt-14">
-      <Sidebar onNodeTemplateChange={handleNodeTemplateChange} />
+      <Sidebar 
+        onNodeTemplateChange={handleNodeTemplateChange} 
+        isOpen={isSidebarOpen} 
+        onToggle={toggleSidebar}
+      />
       <div className="flex-1 flex flex-col">
         <div className="bg-white border-b border-gray-200 p-2 flex items-center">
           <Button 
@@ -481,9 +276,17 @@ const Playground = () => {
             variant="outline" 
             size="sm" 
             onClick={handleSaveCanvas}
-            className="mr-4"
+            className="mr-2"
           >
             Save
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowCanvasMenu(true)}
+            className="mr-4"
+          >
+            Open
           </Button>
           <input
             type="text"
@@ -513,9 +316,14 @@ const Playground = () => {
               <Controls />
             </ReactFlow>
           </div>
-          <div className="w-96">
-            <CodePreview code={generateCode()} generateCode={generateCode} />
-          </div>
+          <CodePreview 
+            code={generateCode(selectedLanguage)} 
+            generateCode={() => generateCode(selectedLanguage)}
+            width={codePreviewWidth}
+            onResize={setCodePreviewWidth}
+            selectedLanguage={selectedLanguage}
+            onLanguageChange={handleLanguageChange}
+          />
         </div>
       </div>
 
@@ -530,6 +338,12 @@ const Playground = () => {
           developerMode={developerMode}
         />
       )}
+
+      <CanvasMenu 
+        isOpen={showCanvasMenu}
+        onClose={() => setShowCanvasMenu(false)}
+        onCanvasSelect={handleCanvasSelect}
+      />
     </div>
   );
 };

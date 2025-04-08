@@ -14,11 +14,10 @@ import {
 import '@xyflow/react/dist/style.css';
 import { FilePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 
 import Sidebar from './Sidebar';
 import CodePreview from './CodePreview';
-import NodeActions from './NodeActions';
 import RoleNode from './NodeTypes/RoleNode';
 import ActionNode from './NodeTypes/ActionNode';
 import ContractNode from './NodeTypes/ContractNode';
@@ -30,41 +29,19 @@ import PartyNode from './NodeTypes/PartyNode';
 import PayeeNode from './NodeTypes/PayeeNode';
 import NodePropertiesDialog from './NodePropertiesDialog';
 import CanvasMenu from './CanvasMenu';
-import ThemeSwitcher from '@/components/ThemeSwitcher';
 import { saveCanvas } from '@/services/mongodb';
 import { generateCodeForLanguage } from '@/services/codeGenerators';
 
-// Enhance node types with NodeActions
-const createNodeWithActions = (NodeComponent: React.ComponentType<any>) => {
-  return ({ id, data, ...props }: { id: string, data: any }) => {
-    const nodeRef = useRef(null);
-    return (
-      <div className="relative" ref={nodeRef}>
-        <NodeComponent id={id} data={data} {...props} />
-        {data.showActions && (
-          <NodeActions 
-            node={{ id, data, ...props }} 
-            onDelete={data.onDelete} 
-            onDuplicate={data.onDuplicate}
-            onChangeShape={data.onChangeShape} 
-          />
-        )}
-      </div>
-    );
-  };
-};
-
-// Create enhanced node types with actions
 const nodeTypes = {
-  role: createNodeWithActions(RoleNode),
-  action: createNodeWithActions(ActionNode),
-  contract: createNodeWithActions(ContractNode),
-  observation: createNodeWithActions(ObservationNode),
-  value: createNodeWithActions(ValueNode),
-  bound: createNodeWithActions(BoundNode),
-  token: createNodeWithActions(TokenNode),
-  party: createNodeWithActions(PartyNode),
-  payee: createNodeWithActions(PayeeNode)
+  role: RoleNode,
+  action: ActionNode,
+  contract: ContractNode,
+  observation: ObservationNode,
+  value: ValueNode,
+  bound: BoundNode,
+  token: TokenNode,
+  party: PartyNode,
+  payee: PayeeNode
 };
 
 interface NodeTemplate {
@@ -98,7 +75,6 @@ const Playground = () => {
   const [isSidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [codePreviewWidth, setCodePreviewWidth] = useState<number>(400);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("move");
-  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   
   const developerMode = false;
 
@@ -164,17 +140,16 @@ const Playground = () => {
         y: event.clientY - reactFlowBounds.top,
       });
 
+      console.log('Dropping node:', { type, label, position, templateData });
+
       const newNode: Node = {
         id: `${type}-${Date.now()}`,
         type,
         position,
         data: { 
           ...templateData,
-          label,
-          type,
-          onDelete: handleDeleteNode,
-          onDuplicate: handleDuplicateNode,
-          onChangeShape: handleChangeNodeShape
+          label, 
+          type 
         },
       };
 
@@ -186,42 +161,6 @@ const Playground = () => {
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
   }, []);
-
-  const onNodeMouseEnter = useCallback((event: React.MouseEvent, node: Node) => {
-    setHoveredNode(node.id);
-    setNodes((nds) =>
-      nds.map((n) => {
-        if (n.id === node.id) {
-          return {
-            ...n,
-            data: {
-              ...n.data,
-              showActions: true,
-            },
-          };
-        }
-        return n;
-      })
-    );
-  }, [setNodes]);
-
-  const onNodeMouseLeave = useCallback((event: React.MouseEvent, node: Node) => {
-    setHoveredNode(null);
-    setNodes((nds) =>
-      nds.map((n) => {
-        if (n.id === node.id) {
-          return {
-            ...n,
-            data: {
-              ...n.data,
-              showActions: false,
-            },
-          };
-        }
-        return n;
-      })
-    );
-  }, [setNodes]);
 
   const handleCloseNodeEdit = useCallback(() => {
     setSelectedNode(null);
@@ -315,50 +254,15 @@ const Playground = () => {
     setSidebarOpen(prev => !prev);
   }, []);
 
-  // Node manipulation functions
-  const handleDeleteNode = useCallback((nodeId: string) => {
-    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
-    setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
-  }, [setNodes, setEdges]);
-
-  const handleDuplicateNode = useCallback((nodeToDuplicate: Node) => {
-    const newNode = {
-      ...nodeToDuplicate,
-      id: `${nodeToDuplicate.type}-${Date.now()}`,
-      position: {
-        x: nodeToDuplicate.position.x + 50,
-        y: nodeToDuplicate.position.y + 50
-      },
-    };
-    setNodes((nds) => [...nds, newNode]);
-  }, [setNodes]);
-
-  const handleChangeNodeShape = useCallback((nodeId: string, shape: string) => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === nodeId) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              shape: shape
-            }
-          };
-        }
-        return node;
-      })
-    );
-  }, [setNodes]);
-
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 pt-14">
+    <div className="flex h-screen bg-gray-50 pt-14">
       <Sidebar 
         onNodeTemplateChange={handleNodeTemplateChange} 
         isOpen={isSidebarOpen} 
         onToggle={toggleSidebar}
       />
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-2 flex items-center">
+      <div className="flex-1 flex flex-col">
+        <div className="bg-white border-b border-gray-200 p-2 flex items-center">
           <Button 
             variant="outline" 
             size="sm" 
@@ -388,14 +292,11 @@ const Playground = () => {
             type="text"
             value={canvasName}
             onChange={(e) => setCanvasName(e.target.value)}
-            className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1 text-sm"
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
             placeholder="Canvas Name"
           />
-          <div className="ml-auto">
-            <ThemeSwitcher />
-          </div>
         </div>
-        <div className="flex-1 flex h-full">
+        <div className="flex-1 flex">
           <div className="flex-1 h-full" ref={reactFlowWrapper}>
             <ReactFlow
               nodes={nodes}
@@ -407,11 +308,9 @@ const Playground = () => {
               onDrop={onDrop}
               onDragOver={onDragOver}
               onNodeClick={onNodeClick}
-              onNodeMouseEnter={onNodeMouseEnter}
-              onNodeMouseLeave={onNodeMouseLeave}
               nodeTypes={nodeTypes}
               fitView
-              className="bg-dots-darker dark:bg-gray-900"
+              className="bg-dots-darker"
             >
               <Background />
               <Controls />

@@ -3,6 +3,16 @@ import { useState, useEffect, useRef } from 'react';
 import { Copy, Trash2 } from 'lucide-react';
 import { useReactFlow, Node } from '@xyflow/react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
 
 interface NodeHoverControlsProps {
   nodeId: string;
@@ -13,6 +23,7 @@ interface NodeHoverControlsProps {
 const NodeHoverControls = ({ nodeId, position, type }: NodeHoverControlsProps) => {
   const { getNode, deleteElements, setNodes } = useReactFlow();
   const [visible, setVisible] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Show controls with a slight delay to avoid them showing during normal mouse movement
@@ -37,7 +48,12 @@ const NodeHoverControls = ({ nodeId, position, type }: NodeHoverControlsProps) =
   }
 
   const handleDelete = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
     deleteElements({ nodes: [{ id: nodeId }] });
+    setShowDeleteDialog(false);
   };
 
   const handleDuplicate = () => {
@@ -61,44 +77,63 @@ const NodeHoverControls = ({ nodeId, position, type }: NodeHoverControlsProps) =
   if (!visible) return null;
 
   return (
-    <div 
-      className="absolute z-50 flex gap-1 -translate-y-full -mt-2 opacity-0 animate-fade-in"
-      style={{
-        animation: "fade-in 0.2s ease-out forwards",
-      }}
-    >
-      <TooltipProvider delayDuration={300}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={handleDuplicate}
-              className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-md p-1.5 hover:bg-purple-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            >
-              <Copy size={14} className="text-purple-600" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Duplicate</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+    <>
+      <div 
+        className="absolute z-50 flex gap-1 -translate-y-full -mt-2 opacity-0 animate-fade-in"
+        style={{
+          animation: "fade-in 0.2s ease-out forwards",
+        }}
+      >
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleDuplicate}
+                className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-md p-1.5 hover:bg-purple-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <Copy size={14} className="text-purple-600" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Duplicate</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-      <TooltipProvider delayDuration={300}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={handleDelete}
-              className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-md p-1.5 hover:bg-red-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            >
-              <Trash2 size={14} className="text-red-500" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Delete</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleDelete}
+                className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-md p-1.5 hover:bg-red-50 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <Trash2 size={14} className="text-red-500" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Delete</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="sm:max-w-[425px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Node</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this node? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

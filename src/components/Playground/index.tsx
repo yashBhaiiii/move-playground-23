@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   ReactFlow,
@@ -263,19 +264,23 @@ const Playground = () => {
             size="sm" 
             onClick={handleNewCanvas}
             className="mr-2"
+            title="New Canvas"
           >
             <Plus className="h-4 w-4" />
           </Button>
+          
           <Link to="/templates">
             <Button 
               variant="outline" 
               size="sm" 
               className="mr-2"
+              title="Templates"
             >
               <FileText className="h-4 w-4 mr-1" />
               Templates
             </Button>
           </Link>
+          
           <Button 
             variant="outline" 
             size="sm" 
@@ -284,6 +289,7 @@ const Playground = () => {
           >
             Save
           </Button>
+          
           <Button 
             variant="outline" 
             size="sm" 
@@ -292,6 +298,7 @@ const Playground = () => {
           >
             Open
           </Button>
+          
           <input
             type="text"
             value={canvasName}

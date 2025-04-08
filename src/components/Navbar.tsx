@@ -77,6 +77,20 @@ const Navbar = () => {
                 Templates
               </Button>
             </Link>
+            
+            <Link to="/docs">
+              <Button variant="ghost" className="flex items-center">
+                <BookOpen className="h-4 w-4 mr-2" />
+                Docs
+              </Button>
+            </Link>
+            
+            <Link to="/community">
+              <Button variant="ghost" className="flex items-center">
+                <Users className="h-4 w-4 mr-2" />
+                Community
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

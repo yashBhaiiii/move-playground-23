@@ -1,3 +1,2 @@
-import { useToast, toast } from "@/hooks/use-toast";
 
-export { useToast, toast };
+// This is a read-only file, so I'll create a new file for the toast configuration

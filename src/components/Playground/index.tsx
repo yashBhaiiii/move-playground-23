@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   ReactFlow,
@@ -12,9 +11,10 @@ import {
   useEdgesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { FilePlus } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/components/ui/toast-config';
+import { Link } from 'react-router-dom';
 
 import Sidebar from './Sidebar';
 import CodePreview from './CodePreview';
@@ -78,7 +78,6 @@ const Playground = () => {
   
   const developerMode = false;
 
-  // Load template data from localStorage if available
   useEffect(() => {
     const storedTemplate = localStorage.getItem('selectedTemplate');
     
@@ -94,7 +93,6 @@ const Playground = () => {
           title: "Template loaded",
           description: `${templateData.name || "Template"} has been loaded into the editor.`,
         });
-        // Clear the localStorage after loading
         localStorage.removeItem('selectedTemplate');
       } catch (error) {
         console.error('Error loading template data:', error);
@@ -198,7 +196,6 @@ const Playground = () => {
 
   const handleNewCanvas = useCallback(() => {
     if (nodes.length > 0 || edges.length > 0) {
-      // Ask for confirmation if there are items on the canvas
       if (window.confirm("Are you sure you want to clear the canvas? All unsaved changes will be lost.")) {
         setNodes([]);
         setEdges([]);
@@ -209,13 +206,11 @@ const Playground = () => {
         });
       }
     } else {
-      // If canvas is already empty, just reset the name
       setCanvasName("Untitled Canvas");
     }
   }, [nodes, edges, setNodes, setEdges]);
 
   const handleSaveCanvas = useCallback(async () => {
-    // Save the current canvas to MongoDB
     const canvasData = {
       name: canvasName,
       nodes,
@@ -269,9 +264,18 @@ const Playground = () => {
             onClick={handleNewCanvas}
             className="mr-2"
           >
-            <FilePlus className="h-4 w-4 mr-1" />
-            New Canvas
+            <Plus className="h-4 w-4" />
           </Button>
+          <Link to="/templates">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mr-2"
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              Templates
+            </Button>
+          </Link>
           <Button 
             variant="outline" 
             size="sm" 

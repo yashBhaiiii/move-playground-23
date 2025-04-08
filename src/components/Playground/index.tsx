@@ -36,16 +36,14 @@ import { generateCodeForLanguage } from '@/services/codeGenerators';
 
 // Enhance node types with NodeActions
 const createNodeWithActions = (NodeComponent: React.ComponentType<any>) => {
-  // This function signature needs to match what React Flow expects
-  return (props: any) => {
-    const { id, data } = props;
+  return ({ id, data, ...props }: { id: string, data: any }) => {
     const nodeRef = useRef(null);
     return (
       <div className="relative" ref={nodeRef}>
-        <NodeComponent {...props} />
-        {data?.showActions && (
+        <NodeComponent id={id} data={data} {...props} />
+        {data.showActions && (
           <NodeActions 
-            node={props} 
+            node={{ id, data, ...props }} 
             onDelete={data.onDelete} 
             onDuplicate={data.onDuplicate}
             onChangeShape={data.onChangeShape} 

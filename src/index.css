@@ -50,3 +50,72 @@
   background-image: radial-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px);
   background-size: 20px 20px;
 }
+
+/* Node Animation Styles */
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out forwards;
+}
+
+.transition-width {
+  transition-property: width;
+}
+
+/* Hover animations for node elements */
+.node-wrapper:hover {
+  transform: translateY(-2px);
+}
+
+.react-flow__node {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.react-flow__node:hover {
+  z-index: 10;
+}
+
+/* Tooltip animations */
+.tooltip-enter {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.tooltip-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 200ms, transform 200ms;
+}
+
+.tooltip-exit {
+  opacity: 1;
+}
+
+.tooltip-exit-active {
+  opacity: 0;
+  transition: opacity 100ms;
+}

@@ -1,5 +1,6 @@
 
 import { Handle, Position } from '@xyflow/react';
+import NodeWrapper from '../NodeWrapper';
 
 interface BoundNodeProps {
   data: { 
@@ -7,12 +8,14 @@ interface BoundNodeProps {
     min?: string; 
     max?: string;
     value?: string;
-  }
+  };
+  id: string;
+  type: string;
 }
 
-const BoundNode = ({ data }: BoundNodeProps) => {
+const BoundNodeComponent = ({ data }: { data: BoundNodeProps['data'] }) => {
   return (
-    <div className="px-4 py-2 shadow-lg rounded-lg bg-teal-500 backdrop-blur-sm border border-teal-400 min-w-[150px]">
+    <div className="px-4 py-2 shadow-lg rounded-lg bg-teal-500 backdrop-blur-sm border border-teal-400 min-w-[150px] transition-transform duration-200 hover:shadow-xl">
       <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-teal-400" />
       <div className="flex items-center gap-1 text-white">
         {data.label === 'Between' ? (
@@ -39,6 +42,15 @@ const BoundNode = ({ data }: BoundNodeProps) => {
       </div>
       <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-teal-400" />
     </div>
+  );
+};
+
+// Using NodeWrapper to handle the hover controls
+const BoundNode = (props: BoundNodeProps) => {
+  return (
+    <NodeWrapper id={props.id} type={props.type}>
+      <BoundNodeComponent data={props.data} />
+    </NodeWrapper>
   );
 };
 

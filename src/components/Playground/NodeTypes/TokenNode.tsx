@@ -1,15 +1,18 @@
 
 import { Handle, Position } from '@xyflow/react';
+import NodeWrapper from '../NodeWrapper';
 
 interface TokenNodeProps {
   data: { 
     label: string; 
     currency?: string; 
     tokenName?: string;
-  }
+  };
+  id: string;
+  type: string;
 }
 
-const TokenNode = ({ data }: TokenNodeProps) => {
+const TokenNodeComponent = ({ data }: { data: TokenNodeProps['data'] }) => {
   // Custom label for display
   const getDisplayContent = () => {
     if (data.label === 'Currency') {
@@ -38,13 +41,22 @@ const TokenNode = ({ data }: TokenNodeProps) => {
   };
 
   return (
-    <div className="px-4 py-2 shadow-lg rounded-lg bg-red-500 backdrop-blur-sm border border-red-400 min-w-[150px]">
+    <div className="px-4 py-2 shadow-lg rounded-lg bg-red-500 backdrop-blur-sm border border-red-400 min-w-[150px] transition-transform duration-200 hover:shadow-xl">
       <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-red-400" />
       <div className="flex items-center">
         {getDisplayContent()}
       </div>
       <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-red-400" />
     </div>
+  );
+};
+
+// Using NodeWrapper to handle the hover controls
+const TokenNode = (props: TokenNodeProps) => {
+  return (
+    <NodeWrapper id={props.id} type={props.type}>
+      <TokenNodeComponent data={props.data} />
+    </NodeWrapper>
   );
 };
 

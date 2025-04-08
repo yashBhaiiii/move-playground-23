@@ -1,9 +1,19 @@
 
 import { Handle, Position } from '@xyflow/react';
+import NodeWrapper from '../NodeWrapper';
 
-const PayeeNode = ({ data }: { data: { label: string; type?: string } }) => {
+interface PayeeNodeProps {
+  data: { 
+    label: string; 
+    type?: string 
+  };
+  id: string;
+  type: string;
+}
+
+const PayeeNodeComponent = ({ data }: { data: PayeeNodeProps['data'] }) => {
   return (
-    <div className="px-4 py-2 shadow-lg rounded-lg bg-indigo-300 backdrop-blur-sm border border-indigo-200 min-w-[150px]">
+    <div className="px-4 py-2 shadow-lg rounded-lg bg-indigo-300 backdrop-blur-sm border border-indigo-200 min-w-[150px] transition-transform duration-200 hover:shadow-xl">
       <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-indigo-400" />
       <div className="flex items-center gap-1">
         {data.label === 'Account' ? (
@@ -30,6 +40,15 @@ const PayeeNode = ({ data }: { data: { label: string; type?: string } }) => {
       </div>
       <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-indigo-400" />
     </div>
+  );
+};
+
+// Using NodeWrapper to handle the hover controls
+const PayeeNode = (props: PayeeNodeProps) => {
+  return (
+    <NodeWrapper id={props.id} type={props.type}>
+      <PayeeNodeComponent data={props.data} />
+    </NodeWrapper>
   );
 };
 

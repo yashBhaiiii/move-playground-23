@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   ReactFlow,
@@ -36,14 +35,14 @@ import { generateCodeForLanguage } from '@/services/codeGenerators';
 
 // Enhance node types with NodeActions
 const createNodeWithActions = (NodeComponent: React.ComponentType<any>) => {
-  return ({ id, data, ...props }: { id: string, data: any }) => {
+  return ({ id, data, ...props }: { id: string, data: any, position: any }) => {
     const nodeRef = useRef(null);
     return (
       <div className="relative" ref={nodeRef}>
         <NodeComponent id={id} data={data} {...props} />
         {data.showActions && (
           <NodeActions 
-            node={{ id, data, ...props }} 
+            node={{ id, data, position: props.position, ...props }} 
             onDelete={data.onDelete} 
             onDuplicate={data.onDuplicate}
             onChangeShape={data.onChangeShape} 
